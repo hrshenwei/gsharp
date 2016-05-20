@@ -1,0 +1,50 @@
+<form name="[form_id]" id="[form_id]" action="{:url('EditData')}" method="post" novalidate="novalidate">
+	<table id="tbEditMgrMenu" style="border: 0px currentColor; border-image: none; width: 100%;" class="usertable">
+		<colgroup>
+            <col style="width:20%" />
+            <col style="width:80%" />
+        </colgroup>
+        <tbody>
+        	<tr>
+                <td class="editor-label">顶级菜单:</td>
+                <td class="editor-field" colspan="3">
+                	<input type="hidden" id="mgrMenuId" name="mgrMenuId" />
+                	<select name="topMgrMenuId" id="topMgrMenuId">
+                		<option value="0">-顶级-</option>
+						{volist name="topMgrMenuList" id="topMgrMenuListVal"}
+                			<option value="{$topMgrMenuListVal.mgrMenuId}">{$topMgrMenuListVal.menuName}</option>
+                		{/volist}
+					</select>
+                </td>
+            </tr>
+        	<tr>
+                <td class="editor-label">菜单名称:</td>
+                <td class="editor-field">
+                	<input name="menuName" id="menuName" style="width: 120px;" type="text" value="">
+                </td>
+            <tr>
+            <tr>
+            	<td class="editor-label">菜单描述:</td>
+                <td class="editor-field">
+                	<input name="menuCaption" id="menuCaption" style="width: 360px; height:200px;" type="text" value="">
+                </td>
+            </tr>
+            <tr>
+                <td class="editor-label">排序:</td>
+                <td class="editor-field">
+                	<input name="serialNumber" id="serialNumber" style="width: 120px;" type="text" value="">
+                </td>
+            <tr>
+            <tr>
+                <td class="editor-label">状态:</td>
+                <td class="editor-field" colspan="3">
+                	<select name="metaStatus" id="metaStatus">
+						{volist name="metaStatusList" id="metaStatusVal"}
+                			<option value="{$metaStatusVal.Id}">{$metaStatusVal.Value}</option>
+                		{/volist}
+					</select>
+                </td>
+            </tr>
+        </tbody>
+	</table>
+</form>

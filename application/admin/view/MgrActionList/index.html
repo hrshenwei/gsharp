@@ -1,0 +1,412 @@
+<script type="text/javascript">
+	var oTbMgrAction;
+	var anOpen = [];
+	var metaStatusArr = {$metaStatusJson};
+	$(function () {
+		oTbMgrAction = $('#tbMgrAction').dataTable({
+            'bProcessing': false,
+            'bServerSide': true,
+            'bPaginate': true,
+            'iDisplayLength': iDefaultDisplayLength,
+            'bJQueryUI': true,
+            'sDom': '<"fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix"lp>rt<"fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix"ip>',
+            'bSort': false,
+            'bStateSave': false,
+            'sAjaxSource': '{:url("pageIndex")}',
+            'fnServerData': function (sSource, aoData, fnCallback) {
+                $.ajaxGetJSON(sSource, aoData, fnCallback);
+            },
+            'sPaginationType': 'full_numbers',
+            'oLanguage': {
+                'sUrl': '__ROOT__static/DataTables-1.10.11/media/jquery.dataTable.cn.txt'
+            },
+            'aoColumns': [
+                {
+                	'mDataProp': 'actionName', 
+                	'sName': 'actionName',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('actionName').attr('id', 'actionName_' + sData + '_' + oData.actionId);
+                	}
+                },
+                { 
+                	'mDataProp': 'actionCaption', 
+                	'sName': 'actionCaption',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('actionCaption').attr('id', 'actionCaption_' + sData + '_' + oData.actionId);
+                	}
+                },
+                { 
+                	'mDataProp': 'createTime', 
+                	'sName': 'createTime'
+                },
+                { 
+                	'mDataProp': 'lastTime', 
+                	'sName': 'lastTime'
+                },
+                { 
+                	'mDataProp': 'metaStatus', 
+                	'sName': 'metaStatus',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('metaStatus').attr('id', 'metaStatus_' + oData.metaStatus + '_' + oData.actionId);
+                	},
+                	'mRender': function(data, type, full){
+                		return metaStatusArr[data];
+                	}
+                },
+                {
+                    'sTitle': '操作',
+                    'sClass': 'control',
+                    'bSortable': false,
+                    'mData': 'actionId',
+                    'mRender': function (data, type, full) {
+                    	var reStr = '<a href="javascript:void(0)" name="EditMgrAction" onclick="EditMgrActionClick(\'' + data + '\')">编辑</a>&nbsp;'
+                    	+ '<a href="javascript:void(0)" name="DeleteMgrAction" onclick="DeleteClick(\'' + data + '\',\'' + full['actionName'] + '\')">删除</a>';
+                        return reStr;
+                    }
+                }
+            ],
+            'fnDrawCallback': function (oSettings) {
+            	$('#tbMgrAction tbody td.actionName').editable('{:url("editMgrAction")}', {
+                    type: 'text',
+                    event: 'dblclick',
+                    //cancel    : '取消',
+                    //submit    : '确定',
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击编辑',
+                    onsubmit: function (settings, original) {
+                    	$('form', original).validate({
+                    		rules: {
+                                value: {
+                                    required: true,
+                                    remote: {
+                						url: '{:url("checkMenuNameExist")}',
+                						data: {
+                							actionName: function(){
+                								var actionNameVal = $('form input', original).val();
+                								return actionNameVal;
+                							},
+                							actionId: function(){ 
+                								var actionIdVal = $(original).attr('id').split('_')[2];
+                								return actionIdVal; 
+                							}
+                						}
+                					}
+                                }
+                            },
+                            messages: {
+                                value: {
+                                    required: '*',
+                                    remote: '该菜单名称已存在'
+                                }
+                            }
+                        });
+                        return $('form', original).valid();
+                    }
+                });
+            	$('#tbMgrAction tbody td.actionCaption').editable('{:url("editMgrAction")}', {
+                    type: 'text',
+                    event: 'dblclick',
+                    //cancel    : '取消',
+                    //submit    : '确定',
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击编辑',
+                    onsubmit: function (settings, original) {
+                        $('form', original).validate({
+                            rules: {
+                                value: {
+                                    required: true
+                                }
+                            },
+                            messages: {
+                                value: {
+                                    required: '*'
+                                }
+                            }
+                        });
+                        return $('form', original).valid();
+                    }
+                });
+                $('#tbMgrAction tbody td.metaStatus').editable('{:url("editSelectMgrAction")}', {
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击选择',
+                    type: 'select',
+                    event: 'dblclick',
+                    data: metaStatusArr,
+                    ajaxoptions: {
+                    	dataType: 'json'
+                    }
+                });
+            }
+        });
+		
+		$('#bSearch', $('#divMgrActionSearch')).click(function () {
+			var oSettings = oTbMgrAction.fnSettings();
+			
+            oSettings.aoPreSearchCols[0].sSearch = $('#actionName', $('#divMgrActionSearch')).val();
+            oSettings.aoPreSearchCols[0].bRegex = false;
+            oSettings.aoPreSearchCols[0].bSmart = true;
+            
+            oSettings.aoPreSearchCols[1].sSearch = $('#metaStatus', $('#divMgrActionSearch')).val();
+            oSettings.aoPreSearchCols[1].bRegex = false;
+            oSettings.aoPreSearchCols[1].bSmart = true;
+
+            oTbMgrAction.fnDraw();
+        });
+		$('#digCreateMgrAction').dialog({
+            width: 560,
+            bgiframe: true,
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                '新增': function () {
+                    CreateMgrAction($("#frm-CreateMgrAction"));
+                },
+                '取消': function () { $(this).dialog('close'); }
+            }
+        });
+		
+		$('#bInsert', $('#divMgrActionSearch')).click(function () {
+			$('#digCreateMgrAction').dialog('open');
+        });
+		$('#digEditMgrAction').dialog({
+            width: 560,
+            bgiframe: true,
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                '更新': function () {
+                    EditMgrAction($("#frm-EditMgrAction"));
+                },
+                '取消': function () { $(this).dialog('close'); }
+            }
+        });
+		var validatorCreateMgrAction = $('#frm-CreateMgrAction').validate({
+			rules: {
+				actionName: {
+					required: true,
+					remote: {
+						url: '{:url("checkActionNameExist")}',
+						data: {
+							actionName: function(){return $('#actionName', $('#frm-CreateMgrAction')).val();}
+						}
+					}
+				},
+				actionCaption: {
+					required: true
+				},
+				metaStatus: {
+					required: true
+				}
+			},
+			messages: {
+				actionName: {
+					required: '*',
+					remote: '该Action名称已存在'
+				},
+				actionCaption: {
+					required: '*'
+				},
+				serialNumber: {
+					required: '*',
+					number: '请输入数字'
+				},
+				metaStatus: {
+					required: '*'
+				}
+			},
+			ignore: '.ignore'
+		});
+		var validatorEditMgrAction = $('#frm-EditMgrAction').validate({
+			rules: {
+				actionName: {
+					required: true,
+					remote: {
+						url: '{:url("checkActionNameExist")}',
+						data: {
+							actionName: function(){return $('#actionName', $('#frm-EditMgrAction')).val();},
+							actionId: function(){return $('#actionId', $('#frm-EditMgrAction')).val();}
+						}
+					}
+				},
+				actionCaption: {
+					required: true
+				},
+				metaStatus: {
+					required: true
+				}
+			},
+			messages: {
+				actionName: {
+					required: '*',
+					remote: '该Action名称已存在'
+				},
+				actionCaption: {
+					required: '*'
+				},
+				metaStatus: {
+					required: '*'
+				}
+			},
+			ignore: '.ignore'
+		});
+	});
+</script>
+<script type="text/javascript">
+	function CreateMgrAction(frmObj){
+		if (frmObj.valid()) {
+            var MgrAction = {
+            		topMgrActionId: $('#topMgrActionId', frmObj).val(),
+            		actionName: $('#actionName', frmObj).val(),
+            		actionCaption: $('#actionCaption', frmObj).val(),
+            		metaStatus: $('#metaStatus', frmObj).val()
+            };
+            $.ajaxJsonPost({
+                url: frmObj.attr('action'),
+                params: MgrAction,
+                success: CreateMgrActionCallback
+            });
+        }
+	};
+	function CreateMgrActionCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	if(data.topMgrActionArr){
+                		topMgrActionArr = $.extend(topMgrActionArr,data.topMgrActionArr);
+                	}
+                	oTbMgrAction.fnDraw(false);
+                    $('#frm-CreateMgrAction')[0].reset();
+                    $('#digCreateMgrAction').dialog('close');
+                }
+            }
+        });
+	};
+	function EditMgrActionClick(actionId) {
+        $.ajaxGetJSON($('#frm-EditMgrAction').attr('action') + '?actionId=' + actionId + '&' + Math.random(), null,
+        function (data, textStatus, jqXHR) {
+            if (data.actionId != undefined) {
+                var frmObj = $('#frm-EditMgrAction');
+                $('#actionId', frmObj).val(data.actionId);
+                $('#actionName', frmObj).val(data.actionName);
+                $('#actionCaption', frmObj).val(data.actionCaption);
+                $('#metaStatus', frmObj).val(data.metaStatus);
+                frmObj.valid();
+                $('#digEditMgrAction').dialog('open');
+            } else {
+                dialogAlert({
+                    bSuccess: false,
+                    message: '此记录不存在!'
+                });
+            }
+        });
+    };
+	function EditMgrAction(frmObj){
+		if (frmObj.valid()) {
+            var MgrAction = {
+            		actionId: $('#actionId', frmObj).val(),
+            		actionName: $('#actionName', frmObj).val(),
+            		actionCaption: $('#actionCaption', frmObj).val(),
+            		metaStatus: $('#metaStatus', frmObj).val()
+            };
+            $.ajaxJsonPost({
+                url: frmObj.attr('action'),
+                params: MgrAction,
+                success: EditMgrActionCallback
+            });
+        }
+	};
+	function EditMgrActionCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	oTbMgrAction.fnDraw(false);
+                    $('#frm-EditMgrAction')[0].reset();
+                    $('#digEditMgrAction').dialog('close');
+                }
+            }
+        });
+	};
+	function DeleteClick(actionId, actionName){
+		dialogConfirm({
+            message: '确定要删除Action[' + actionName + ']吗？',
+            Ok: function () {
+            	$.ajaxJsonPost({
+                    url: "{:url('delete')}",
+                    params: {actionId : actionId},
+                    success: DeleteClickCallback
+                });
+            }
+        });
+	};
+	function DeleteClickCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	oTbMgrAction.fnDraw(false);
+                }
+            },
+            close: function () {
+                dialogConfirmClose();
+            }
+        });
+	}
+</script>
+<div id="divMgrActionSearch" class="usercont" style="width: 100%;">
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td>Action名称：<input name="actionName" id="actionName" style="width: 120px;" type="text" maxlength="18" value=""></td>
+			<td>
+				Action状态：
+				<select name="metaStatus" id="metaStatus">
+					<option value="">-所有-</option>
+					{volist name="metaStatusList" id="metaStatusVal"}
+              			<option value="{$metaStatusVal.Id}">{$metaStatusVal.Value}</option>
+               		{/volist}
+				</select>
+			</td>
+			<td>
+                <input type="button" id="bSearch" value="查询" class="btn" />
+                &nbsp;
+                <input type="button" id="bInsert" value="新增" class="btn" />
+            </td>
+		</tr>
+	</table>
+</div>
+<div class="userbox" style="width: 100%;">
+	<table id="tbMgrAction" class="ex_highlight" style="width:100%">
+		<colgroup>
+	        <col style="width:15%" />
+	        <col style="width:30%" />
+	        <col style="width:15%" />
+	        <col style="width:15%" />
+	        <col style="width:15%" />
+	        <col style="width:10%" />
+	    </colgroup>
+	    <thead>
+	        <tr>
+	            <th>Action名称</th>
+	            <th>Action描述</th>
+	            <th>创建时间</th>
+	            <th>最后操作时间</th>
+	            <th>菜单状态</th>
+	            <th class="control">操作</th>
+	        </tr>
+	    </thead>
+	    <tbody></tbody>
+	</table>
+</div>
+<div id="digCreateMgrAction" style="display: none;width:500px;" title="新建Action">
+	{include file="MgrActionList/Create" form_id="frm-CreateMgrAction" /}
+</div>
+<div id="digEditMgrAction" style="display: none;width:500px;" title="编辑Action">
+	{include file="MgrActionList/Edit" form_id="frm-EditMgrAction" /}
+</div>

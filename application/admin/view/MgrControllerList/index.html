@@ -1,0 +1,411 @@
+<script type="text/javascript">
+	var oTbMgrController;
+	var anOpen = [];
+	var metaStatusArr = {$metaStatusJson};
+	$(function () {
+		oTbMgrController = $('#tbMgrController').dataTable({
+            'bProcessing': false,
+            'bServerSide': true,
+            'bPaginate': true,
+            'iDisplayLength': iDefaultDisplayLength,
+            'bJQueryUI': true,
+            'sDom': '<"fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix"lp>rt<"fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix"ip>',
+            'bSort': false,
+            'bStateSave': false,
+            'sAjaxSource': '{:url("pageIndex")}',
+            'fnServerData': function (sSource, aoData, fnCallback) {
+                $.ajaxGetJSON(sSource, aoData, fnCallback);
+            },
+            'sPaginationType': 'full_numbers',
+            'oLanguage': {
+                'sUrl': '__ROOT__static/DataTables-1.10.11/media/jquery.dataTable.cn.txt'
+            },
+            'aoColumns': [
+                {
+                	'mDataProp': 'controllerName', 
+                	'sName': 'controllerName',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('controllerName').attr('id', 'controllerName_' + sData + '_' + oData.controllerId);
+                	}
+                },
+                { 
+                	'mDataProp': 'controllerCaption', 
+                	'sName': 'controllerCaption',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('controllerCaption').attr('id', 'controllerCaption_' + sData + '_' + oData.controllerId);
+                	}
+                },
+                { 
+                	'mDataProp': 'createTime', 
+                	'sName': 'createTime'
+                },
+                { 
+                	'mDataProp': 'lastTime', 
+                	'sName': 'lastTime'
+                },
+                { 
+                	'mDataProp': 'metaStatus', 
+                	'sName': 'metaStatus',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('metaStatus').attr('id', 'metaStatus_' + oData.metaStatus + '_' + oData.controllerId);
+                	},
+                	'mRender': function(data, type, full){
+                		return metaStatusArr[data];
+                	}
+                },
+                {
+                    'sTitle': '操作',
+                    'sClass': 'control',
+                    'bSortable': false,
+                    'mData': 'controllerId',
+                    'mRender': function (data, type, full) {
+                    	var reStr = '<a href="javascript:void(0)" name="EditMgrController" onclick="EditMgrControllerClick(\'' + data + '\')">编辑</a>&nbsp;'
+                    	+ '<a href="javascript:void(0)" name="DeleteMgrController" onclick="DeleteClick(\'' + data + '\',\'' + full['controllerName'] + '\')">删除</a>';
+                        return reStr;
+                    }
+                }
+            ],
+            'fnDrawCallback': function (oSettings) {
+            	$('#tbMgrController tbody td.controllerName').editable('{:url("editMgrController")}', {
+                    type: 'text',
+                    event: 'dblclick',
+                    //cancel    : '取消',
+                    //submit    : '确定',
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击编辑',
+                    onsubmit: function (settings, original) {
+                    	$('form', original).validate({
+                    		rules: {
+                                value: {
+                                    required: true,
+                                    remote: {
+                						url: '{:url("checkMenuNameExist")}',
+                						data: {
+                							controllerName: function(){
+                								var controllerNameVal = $('form input', original).val();
+                								return controllerNameVal;
+                							},
+                							controllerId: function(){ 
+                								var controllerIdVal = $(original).attr('id').split('_')[2];
+                								return controllerIdVal; 
+                							}
+                						}
+                					}
+                                }
+                            },
+                            messages: {
+                                value: {
+                                    required: '*',
+                                    remote: '该菜单名称已存在'
+                                }
+                            }
+                        });
+                        return $('form', original).valid();
+                    }
+                });
+            	$('#tbMgrController tbody td.controllerCaption').editable('{:url("editMgrController")}', {
+                    type: 'text',
+                    event: 'dblclick',
+                    //cancel    : '取消',
+                    //submit    : '确定',
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击编辑',
+                    onsubmit: function (settings, original) {
+                        $('form', original).validate({
+                            rules: {
+                                value: {
+                                    required: true
+                                }
+                            },
+                            messages: {
+                                value: {
+                                    required: '*'
+                                }
+                            }
+                        });
+                        return $('form', original).valid();
+                    }
+                });
+                $('#tbMgrController tbody td.metaStatus').editable('{:url("editSelectMgrController")}', {
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击选择',
+                    type: 'select',
+                    event: 'dblclick',
+                    data: metaStatusArr,
+                    ajaxoptions: {
+                    	dataType: 'json'
+                    }
+                });
+            }
+        });
+		
+		$('#bSearch', $('#divMgrControllerSearch')).click(function () {
+			var oSettings = oTbMgrController.fnSettings();
+			
+            oSettings.aoPreSearchCols[0].sSearch = $('#controllerName', $('#divMgrControllerSearch')).val();
+            oSettings.aoPreSearchCols[0].bRegex = false;
+            oSettings.aoPreSearchCols[0].bSmart = true;
+            
+            oSettings.aoPreSearchCols[1].sSearch = $('#metaStatus', $('#divMgrControllerSearch')).val();
+            oSettings.aoPreSearchCols[1].bRegex = false;
+            oSettings.aoPreSearchCols[1].bSmart = true;
+
+            oTbMgrController.fnDraw();
+        });
+		$('#digCreateMgrController').dialog({
+            width: 600,
+            bgiframe: true,
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                '新增': function () {
+                    CreateMgrController($("#frm-CreateMgrController"));
+                },
+                '取消': function () { $(this).dialog('close'); }
+            }
+        });
+		
+		$('#bInsert', $('#divMgrControllerSearch')).click(function () {
+			$('#digCreateMgrController').dialog('open');
+        });
+		$('#digEditMgrController').dialog({
+            width: 600,
+            bgiframe: true,
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                '更新': function () {
+                    EditMgrController($("#frm-EditMgrController"));
+                },
+                '取消': function () { $(this).dialog('close'); }
+            }
+        });
+		var validatorCreateMgrController = $('#frm-CreateMgrController').validate({
+			rules: {
+				controllerName: {
+					required: true,
+					remote: {
+						url: '{:url("checkControllerNameExist")}',
+						data: {
+							controllerName: function(){return $('#controllerName', $('#frm-CreateMgrController')).val();}
+						}
+					}
+				},
+				controllerCaption: {
+					required: true
+				},
+				metaStatus: {
+					required: true
+				}
+			},
+			messages: {
+				controllerName: {
+					required: '*',
+					remote: '该Controller名称已存在'
+				},
+				controllerCaption: {
+					required: '*'
+				},
+				serialNumber: {
+					required: '*',
+					number: '请输入数字'
+				},
+				metaStatus: {
+					required: '*'
+				}
+			},
+			ignore: '.ignore'
+		});
+		var validatorEditMgrController = $('#frm-EditMgrController').validate({
+			rules: {
+				controllerName: {
+					required: true,
+					remote: {
+						url: '{:url("checkActionNameExist")}',
+						data: {
+							controllerName: function(){return $('#controllerName', $('#frm-EditMgrController')).val();},
+							controllerId: function(){return $('#controllerId', $('#frm-EditMgrController')).val();}
+						}
+					}
+				},
+				controllerCaption: {
+					required: true
+				},
+				metaStatus: {
+					required: true
+				}
+			},
+			messages: {
+				controllerName: {
+					required: '*',
+					remote: '该Action名称已存在'
+				},
+				controllerCaption: {
+					required: '*'
+				},
+				metaStatus: {
+					required: '*'
+				}
+			},
+			ignore: '.ignore'
+		});
+	});
+</script>
+<script type="text/javascript">
+	function CreateMgrController(frmObj){
+		if (frmObj.valid()) {
+            var MgrController = {
+            		controllerName: $('#controllerName', frmObj).val(),
+            		controllerCaption: $('#controllerCaption', frmObj).val(),
+            		metaStatus: $('#metaStatus', frmObj).val()
+            };
+            $.ajaxJsonPost({
+                url: frmObj.attr('action'),
+                params: MgrController,
+                success: CreateMgrControllerCallback
+            });
+        }
+	};
+	function CreateMgrControllerCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	if(data.topMgrControllerArr){
+                		topMgrControllerArr = $.extend(topMgrControllerArr,data.topMgrControllerArr);
+                	}
+                	oTbMgrController.fnDraw(false);
+                    $('#frm-CreateMgrController')[0].reset();
+                    $('#digCreateMgrController').dialog('close');
+                }
+            }
+        });
+	};
+	function EditMgrControllerClick(controllerId) {
+        $.ajaxGetJSON($('#frm-EditMgrController').attr('action') + '?controllerId=' + controllerId + '&' + Math.random(), null,
+        function (data, textStatus, jqXHR) {
+            if (data.controllerId != undefined) {
+                var frmObj = $('#frm-EditMgrController');
+                $('#controllerId', frmObj).val(data.controllerId);
+                $('#controllerName', frmObj).val(data.controllerName);
+                $('#controllerCaption', frmObj).val(data.controllerCaption);
+                $('#metaStatus', frmObj).val(data.metaStatus);
+                frmObj.valid();
+                $('#digEditMgrController').dialog('open');
+            } else {
+                dialogAlert({
+                    bSuccess: false,
+                    message: '此记录不存在!'
+                });
+            }
+        });
+    };
+	function EditMgrController(frmObj){
+		if (frmObj.valid()) {
+            var MgrController = {
+            		controllerId: $('#controllerId', frmObj).val(),
+            		controllerName: $('#controllerName', frmObj).val(),
+            		controllerCaption: $('#controllerCaption', frmObj).val(),
+            		metaStatus: $('#metaStatus', frmObj).val()
+            };
+            $.ajaxJsonPost({
+                url: frmObj.attr('action'),
+                params: MgrController,
+                success: EditMgrControllerCallback
+            });
+        }
+	};
+	function EditMgrControllerCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	oTbMgrController.fnDraw(false);
+                    $('#frm-EditMgrController')[0].reset();
+                    $('#digEditMgrController').dialog('close');
+                }
+            }
+        });
+	};
+	function DeleteClick(controllerId, controllerName){
+		dialogConfirm({
+            message: '确定要删除菜单[' + controllerName + ']吗？',
+            Ok: function () {
+            	$.ajaxJsonPost({
+                    url: "{:url('delete')}",
+                    params: {controllerId : controllerId},
+                    success: DeleteClickCallback
+                });
+            }
+        });
+	};
+	function DeleteClickCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	oTbMgrController.fnDraw(false);
+                }
+            },
+            close: function () {
+                dialogConfirmClose();
+            }
+        });
+	}
+</script>
+<div id="divMgrControllerSearch" class="usercont" style="width: 100%;">
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td>Controller名称：<input name="controllerName" id="controllerName" style="width: 120px;" type="text" maxlength="18" value=""></td>
+			<td>
+				Controller状态：
+				<select name="metaStatus" id="metaStatus">
+					<option value="">-所有-</option>
+					{volist name="metaStatusList" id="metaStatusVal"}
+              			<option value="{$metaStatusVal.Id}">{$metaStatusVal.Value}</option>
+               		{/volist}
+				</select>
+			</td>
+			<td>
+                <input type="button" id="bSearch" value="查询" class="btn" />
+                &nbsp;
+                <input type="button" id="bInsert" value="新增" class="btn" />
+            </td>
+		</tr>
+	</table>
+</div>
+<div class="userbox" style="width: 100%;">
+	<table id="tbMgrController" class="ex_highlight" style="width:100%">
+		<colgroup>
+	        <col style="width:15%" />
+	        <col style="width:30%" />
+	        <col style="width:15%" />
+	        <col style="width:15%" />
+	        <col style="width:15%" />
+	        <col style="width:10%" />
+	    </colgroup>
+	    <thead>
+	        <tr>
+	            <th>Controller名称</th>
+	            <th>Controller描述</th>
+	            <th>创建时间</th>
+	            <th>最后操作时间</th>
+	            <th>菜单状态</th>
+	            <th class="control">操作</th>
+	        </tr>
+	    </thead>
+	    <tbody></tbody>
+	</table>
+</div>
+<div id="digCreateMgrController" style="display: none;width:500px;" title="新建Controller">
+	{include file="MgrControllerList/Create" form_id="frm-CreateMgrController" /}
+</div>
+<div id="digEditMgrController" style="display: none;width:500px;" title="编辑Controller">
+	{include file="MgrControllerList/Edit" form_id="frm-EditMgrController" /}
+</div>

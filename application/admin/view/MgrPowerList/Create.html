@@ -1,0 +1,58 @@
+<form name="[form_id]" id="[form_id]" action="{:url('Create')}" method="post" novalidate="novalidate">
+	<table id="tbCreateMgrPower" style="border: 0px currentColor; border-image: none; width: 100%;" class="usertable">
+		<colgroup>
+            <col style="width:20%" />
+            <col style="width:80%" />
+        </colgroup>
+        <tbody>
+        	<tr>
+                <td class="editor-label">权限名称:</td>
+                <td class="editor-field">
+                	<input name="powerName" id="powerName" style="width: 120px;" type="text" value="">
+                </td>
+            <tr>
+            <tr>
+            	<td class="editor-label">权限描述:</td>
+                <td class="editor-field">
+                	<input name="powerCaption" id="powerCaption" style="width: 360px; height:200px;" type="text" value="">
+                </td>
+            </tr>
+            <tr>
+                <td class="editor-label">Controller:</td>
+                <td class="editor-field">
+                	<select name="controllerId" id="controllerId">
+						{volist name="controllerIdList" id="controllerIdListVal"}
+                			<option value="{$controllerIdListVal.controllerId}">{$controllerIdListVal.controllerName}</option>
+                		{/volist}
+					</select>
+                </td>
+            </tr>
+            <tr>
+                <td class="editor-label">Action:</td>
+                <td class="editor-field">
+                	<select name="actionId" id="actionId">
+						{volist name="actionIdList" id="actionIdListVal"}
+                			<option value="{$actionIdListVal.actionId}">{$actionIdListVal.actionName}</option>
+                		{/volist}
+					</select>
+                </td>
+            </tr>
+            <tr>
+                <td class="editor-label">排序:</td>
+                <td class="editor-field">
+                	<input name="serialNumber" id="serialNumber" style="width: 120px;" type="text" value="">
+                </td>
+            <tr>
+            <tr>
+                <td class="editor-label">状态:</td>
+                <td class="editor-field" colspan="3">
+                	<select name="metaStatus" id="metaStatus">
+						{volist name="metaStatusList" id="metaStatusVal"}
+                			<option value="{$metaStatusVal.Id}">{$metaStatusVal.Value}</option>
+                		{/volist}
+					</select>
+                </td>
+            </tr>
+        </tbody>
+	</table>
+</form>

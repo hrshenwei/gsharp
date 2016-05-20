@@ -1,0 +1,429 @@
+<script type="text/javascript">
+	var oTbMgrPower;
+	var anOpen = [];
+	var metaStatusArr = {$metaStatusJson};
+	$(function () {
+		oTbMgrPower = $('#tbMgrPower').dataTable({
+            'bProcessing': false,
+            'bServerSide': true,
+            'bPaginate': true,
+            'iDisplayLength': iDefaultDisplayLength,
+            'bJQueryUI': true,
+            'sDom': '<"fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix"lp>rt<"fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix"ip>',
+            'bSort': false,
+            'bStateSave': false,
+            'sAjaxSource': '{:url("pageIndex")}',
+            'fnServerData': function (sSource, aoData, fnCallback) {
+                $.ajaxGetJSON(sSource, aoData, fnCallback);
+            },
+            'sPaginationType': 'full_numbers',
+            'oLanguage': {
+                'sUrl': '__ROOT__static/DataTables-1.10.11/media/jquery.dataTable.cn.txt'
+            },
+            'aoColumns': [
+                {
+                	'mDataProp': 'powerName', 
+                	'sName': 'powerName',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('powerName').attr('id', 'powerName_' + sData + '_' + oData.powerId);
+                	}
+                },
+                { 
+                	'mDataProp': 'powerCaption', 
+                	'sName': 'powerCaption',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('powerCaption').attr('id', 'powerCaption_' + sData + '_' + oData.powerId);
+                	}
+                },
+                { 
+                	'mDataProp': 'controllerName', 
+                	'sName': 'controllerName'
+                },
+                { 
+                	'mDataProp': 'actionName', 
+                	'sName': 'actionName'
+                },
+                { 
+                	'mDataProp': 'serialNumber', 
+                	'sName': 'serialNumber'
+                },
+                { 
+                	'mDataProp': 'lastTime', 
+                	'sName': 'lastTime'
+                },
+                { 
+                	'mDataProp': 'metaStatus', 
+                	'sName': 'metaStatus',
+                	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
+                		$(nTd).addClass('metaStatus').attr('id', 'metaStatus_' + oData.metaStatus + '_' + oData.powerId);
+                	},
+                	'mRender': function(data, type, full){
+                		return metaStatusArr[data];
+                	}
+                },
+                {
+                    'sTitle': '操作',
+                    'sClass': 'control',
+                    'bSortable': false,
+                    'mData': 'powerId',
+                    'mRender': function (data, type, full) {
+                    	var reStr = '<a href="javascript:void(0)" name="EditMgrPower" onclick="EditMgrPowerClick(\'' + data + '\')">编辑</a>&nbsp;'
+                    	+ '<a href="javascript:void(0)" name="DeleteMgrPower" onclick="DeleteClick(\'' + data + '\',\'' + full['powerName'] + '\')">删除</a>';
+                        return reStr;
+                    }
+                }
+            ],
+            'fnDrawCallback': function (oSettings) {
+            	$('#tbMgrPower tbody td.powerName').editable('{:url("editMgrPower")}', {
+                    type: 'text',
+                    event: 'dblclick',
+                    //cancel    : '取消',
+                    //submit    : '确定',
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击编辑',
+                    onsubmit: function (settings, original) {
+                    	$('form', original).validate({
+                    		rules: {
+                                value: {
+                                    required: true,
+                                    remote: {
+                						url: '{:url("checkMenuNameExist")}',
+                						data: {
+                							powerName: function(){
+                								var powerNameVal = $('form input', original).val();
+                								return powerNameVal;
+                							},
+                							powerId: function(){ 
+                								var powerIdVal = $(original).attr('id').split('_')[2];
+                								return powerIdVal; 
+                							}
+                						}
+                					}
+                                }
+                            },
+                            messages: {
+                                value: {
+                                    required: '*',
+                                    remote: '该菜单名称已存在'
+                                }
+                            }
+                        });
+                        return $('form', original).valid();
+                    }
+                });
+            	$('#tbMgrPower tbody td.powerCaption').editable('{:url("editMgrPower")}', {
+                    type: 'text',
+                    event: 'dblclick',
+                    //cancel    : '取消',
+                    //submit    : '确定',
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击编辑',
+                    onsubmit: function (settings, original) {
+                        $('form', original).validate({
+                            rules: {
+                                value: {
+                                    required: true
+                                }
+                            },
+                            messages: {
+                                value: {
+                                    required: '*'
+                                }
+                            }
+                        });
+                        return $('form', original).valid();
+                    }
+                });
+                $('#tbMgrPower tbody td.metaStatus').editable('{:url("editSelectMgrPower")}', {
+                    onblur: 'submit',
+                    indicator: '保存中...',
+                    tooltip: '双击选择',
+                    type: 'select',
+                    event: 'dblclick',
+                    data: metaStatusArr,
+                    ajaxoptions: {
+                    	dataType: 'json'
+                    }
+                });
+            }
+        });
+		
+		$('#bSearch', $('#divMgrPowerSearch')).click(function () {
+			var oSettings = oTbMgrPower.fnSettings();
+			
+            oSettings.aoPreSearchCols[0].sSearch = $('#powerName', $('#divMgrPowerSearch')).val();
+            oSettings.aoPreSearchCols[0].bRegex = false;
+            oSettings.aoPreSearchCols[0].bSmart = true;
+            
+            oSettings.aoPreSearchCols[1].sSearch = $('#metaStatus', $('#divMgrPowerSearch')).val();
+            oSettings.aoPreSearchCols[1].bRegex = false;
+            oSettings.aoPreSearchCols[1].bSmart = true;
+
+            oTbMgrPower.fnDraw();
+        });
+		$('#digCreateMgrPower').dialog({
+            width: 600,
+            bgiframe: true,
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                '新增': function () {
+                    CreateMgrPower($("#frm-CreateMgrPower"));
+                },
+                '取消': function () { $(this).dialog('close'); }
+            }
+        });
+		
+		$('#bInsert', $('#divMgrPowerSearch')).click(function () {
+			$('#digCreateMgrPower').dialog('open');
+        });
+		$('#digEditMgrPower').dialog({
+            width: 600,
+            bgiframe: true,
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                '更新': function () {
+                    EditMgrPower($("#frm-EditMgrPower"));
+                },
+                '取消': function () { $(this).dialog('close'); }
+            }
+        });
+		var validatorCreateMgrPower = $('#frm-CreateMgrPower').validate({
+			rules: {
+				powerName: {
+					required: true,
+					remote: {
+						url: '{:url("checkControllerNameExist")}',
+						data: {
+							powerName: function(){return $('#powerName', $('#frm-CreateMgrPower')).val();}
+						}
+					}
+				},
+				powerCaption: {
+					required: true
+				},
+				metaStatus: {
+					required: true
+				}
+			},
+			messages: {
+				powerName: {
+					required: '*',
+					remote: '该Controller名称已存在'
+				},
+				powerCaption: {
+					required: '*'
+				},
+				serialNumber: {
+					required: '*',
+					number: '请输入数字'
+				},
+				metaStatus: {
+					required: '*'
+				}
+			},
+			ignore: '.ignore'
+		});
+		var validatorEditMgrPower = $('#frm-EditMgrPower').validate({
+			rules: {
+				powerName: {
+					required: true,
+					remote: {
+						url: '{:url("checkActionNameExist")}',
+						data: {
+							powerName: function(){return $('#powerName', $('#frm-EditMgrPower')).val();},
+							powerId: function(){return $('#powerId', $('#frm-EditMgrPower')).val();}
+						}
+					}
+				},
+				powerCaption: {
+					required: true
+				},
+				metaStatus: {
+					required: true
+				}
+			},
+			messages: {
+				powerName: {
+					required: '*',
+					remote: '该Action名称已存在'
+				},
+				powerCaption: {
+					required: '*'
+				},
+				metaStatus: {
+					required: '*'
+				}
+			},
+			ignore: '.ignore'
+		});
+	});
+</script>
+<script type="text/javascript">
+	function CreateMgrPower(frmObj){
+		if (frmObj.valid()) {
+            var MgrPower = {
+            		powerName: $('#powerName', frmObj).val(),
+            		powerCaption: $('#powerCaption', frmObj).val(),
+            		controllerId: $('#controllerId', frmObj).val(),
+            		actionId: $('#actionId', frmObj).val(),
+            		serialNumber: $('#serialNumber', frmObj).val(),
+            		metaStatus: $('#metaStatus', frmObj).val()
+            };
+            $.ajaxJsonPost({
+                url: frmObj.attr('action'),
+                params: MgrPower,
+                success: CreateMgrPowerCallback
+            });
+        }
+	};
+	function CreateMgrPowerCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	oTbMgrPower.fnDraw(false);
+                    $('#frm-CreateMgrPower')[0].reset();
+                    $('#digCreateMgrPower').dialog('close');
+                }
+            }
+        });
+	};
+	function EditMgrPowerClick(powerId) {
+        $.ajaxGetJSON($('#frm-EditMgrPower').attr('action') + '?powerId=' + powerId + '&' + Math.random(), null,
+        function (data, textStatus, jqXHR) {
+            if (data.powerId != undefined) {
+                var frmObj = $('#frm-EditMgrPower');
+                $('#powerId', frmObj).val(data.powerId);
+                $('#powerName', frmObj).val(data.powerName);
+                $('#powerCaption', frmObj).val(data.powerCaption);
+                $('#controllerId', frmObj).val(data.controllerId);
+                $('#actionId', frmObj).val(data.actionId);
+                $('#serialNumber', frmObj).val(data.serialNumber);
+                $('#metaStatus', frmObj).val(data.metaStatus);
+                frmObj.valid();
+                $('#digEditMgrPower').dialog('open');
+            } else {
+                dialogAlert({
+                    bSuccess: false,
+                    message: '此记录不存在!'
+                });
+            }
+        });
+    };
+	function EditMgrPower(frmObj){
+		if (frmObj.valid()) {
+            var MgrPower = {
+            		powerId: $('#powerId', frmObj).val(),
+            		powerName: $('#powerName', frmObj).val(),
+            		powerCaption: $('#powerCaption', frmObj).val(),
+            		controllerId: $('#controllerId', frmObj).val(),
+            		actionId: $('#actionId', frmObj).val(),
+            		serialNumber: $('#serialNumber', frmObj).val(),
+            		metaStatus: $('#metaStatus', frmObj).val()
+            };
+            $.ajaxJsonPost({
+                url: frmObj.attr('action'),
+                params: MgrPower,
+                success: EditMgrPowerCallback
+            });
+        }
+	};
+	function EditMgrPowerCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	oTbMgrPower.fnDraw(false);
+                    $('#frm-EditMgrPower')[0].reset();
+                    $('#digEditMgrPower').dialog('close');
+                }
+            }
+        });
+	};
+	function DeleteClick(powerId, powerName){
+		dialogConfirm({
+            message: '确定要删除权限[' + powerName + ']吗？',
+            Ok: function () {
+            	$.ajaxJsonPost({
+                    url: "{:url('delete')}",
+                    params: {powerId : powerId},
+                    success: DeleteClickCallback
+                });
+            }
+        });
+	};
+	function DeleteClickCallback(data){
+		dialogAlert({
+            bSuccess: data.bSuccess,
+            message: data.message,
+            open: function () {
+                if (data.bSuccess) {
+                	oTbMgrPower.fnDraw(false);
+                }
+            },
+            close: function () {
+                dialogConfirmClose();
+            }
+        });
+	}
+</script>
+<div id="divMgrPowerSearch" class="usercont" style="width: 100%;">
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td>权限名称：<input name="powerName" id="powerName" style="width: 120px;" type="text" maxlength="18" value=""></td>
+			<td>
+				权限状态：
+				<select name="metaStatus" id="metaStatus">
+					<option value="">-所有-</option>
+					{volist name="metaStatusList" id="metaStatusVal"}
+              			<option value="{$metaStatusVal.Id}">{$metaStatusVal.Value}</option>
+               		{/volist}
+				</select>
+			</td>
+			<td>
+                <input type="button" id="bSearch" value="查询" class="btn" />
+                &nbsp;
+                <input type="button" id="bInsert" value="新增" class="btn" />
+            </td>
+		</tr>
+	</table>
+</div>
+<div class="userbox" style="width: 100%;">
+	<table id="tbMgrPower" class="ex_highlight" style="width:100%">
+		<colgroup>
+	        <col style="width:10%" />
+	        <col style="width:15%" />
+	        <col style="width:15%" />
+	        <col style="width:15%" />
+	        <col style="width:10%" />
+	        <col style="width:15%" />
+	        <col style="width:10%" />
+	        <col style="width:10%" />
+	    </colgroup>
+	    <thead>
+	        <tr>
+	            <th>权限名称</th>
+	            <th>权限描述</th>
+	            <th>Controller</th>
+	            <th>Action</th>
+	            <th>排序</th>
+	            <th>最后操作时间</th>
+	            <th>菜单状态</th>
+	            <th class="control">操作</th>
+	        </tr>
+	    </thead>
+	    <tbody></tbody>
+	</table>
+</div>
+<div id="digCreateMgrPower" style="display: none;width:500px;" title="新建Controller">
+	{include file="MgrPowerList/Create" form_id="frm-CreateMgrPower" /}
+</div>
+<div id="digEditMgrPower" style="display: none;width:500px;" title="编辑Controller">
+	{include file="MgrPowerList/Edit" form_id="frm-EditMgrPower" /}
+</div>

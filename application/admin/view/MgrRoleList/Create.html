@@ -1,0 +1,32 @@
+<form name="[form_id]" id="[form_id]" action="{:url('Create')}" method="post" novalidate="novalidate">
+	<table id="tbCreateMgrRole" style="border: 0px currentColor; border-image: none; width: 100%;" class="usertable">
+		<colgroup>
+            <col style="width:20%" />
+            <col style="width:80%" />
+        </colgroup>
+        <tbody>
+        	<tr>
+                <td class="editor-label">角色名称:</td>
+                <td class="editor-field">
+                	<input name="roleName" id="roleName" style="width: 120px;" type="text" value="">
+                </td>
+            <tr>
+            <tr>
+            	<td class="editor-label">角色描述:</td>
+                <td class="editor-field">
+                	<input name="roleCaption" id="roleCaption" style="width: 360px; height:200px;" type="text" value="">
+                </td>
+            </tr>
+            <tr>
+                <td class="editor-label">状态:</td>
+                <td class="editor-field" colspan="3">
+                	<select name="metaStatus" id="metaStatus">
+						{volist name="metaStatusList" id="metaStatusVal"}
+                			<option value="{$metaStatusVal.Id}">{$metaStatusVal.Value}</option>
+                		{/volist}
+					</select>
+                </td>
+            </tr>
+        </tbody>
+	</table>
+</form>

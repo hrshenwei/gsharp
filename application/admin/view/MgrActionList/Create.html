@@ -1,0 +1,32 @@
+<form name="[form_id]" id="[form_id]" action="{:url('Create')}" method="post" novalidate="novalidate">
+	<table id="tbCreateMgrAction" style="border: 0px currentColor; border-image: none; width: 100%;" class="usertable">
+		<colgroup>
+            <col style="width:20%" />
+            <col style="width:80%" />
+        </colgroup>
+        <tbody>
+        	<tr>
+                <td class="editor-label">Action名称:</td>
+                <td class="editor-field">
+                	<input name="actionName" id="actionName" style="width: 120px;" type="text" value="">
+                </td>
+            <tr>
+            <tr>
+            	<td class="editor-label">Action描述:</td>
+                <td class="editor-field">
+                	<input name="actionCaption" id="actionCaption" style="width: 360px; height:200px;" type="text" value="">
+                </td>
+            </tr>
+            <tr>
+                <td class="editor-label">状态:</td>
+                <td class="editor-field" colspan="3">
+                	<select name="metaStatus" id="metaStatus">
+						{volist name="metaStatusList" id="metaStatusVal"}
+                			<option value="{$metaStatusVal.Id}">{$metaStatusVal.Value}</option>
+                		{/volist}
+					</select>
+                </td>
+            </tr>
+        </tbody>
+	</table>
+</form>
