@@ -2,6 +2,7 @@
 	var oTbMgrController;
 	var anOpen = [];
 	var metaStatusArr = {$metaStatusJson};
+	var topControllerJson = {$topControllerJson};
 	$(function () {
 		oTbMgrController = $('#tbMgrController').dataTable({
             'bProcessing': false,
@@ -29,6 +30,20 @@
                 	}
                 },
                 { 
+                	'mDataProp': 'topControllerId', 
+                	'sName': 'topControllerId',
+                	'mRender': function(data, type, full){
+                		var reStr = '';
+                		if(data == 0){
+                			reStr = '顶级';
+                		}
+                		else{
+                			reStr = topControllerJson[data];
+                		}
+                		return reStr;
+                	}
+                },
+                { 
                 	'mDataProp': 'controllerCaption', 
                 	'sName': 'controllerCaption',
                 	'fnCreatedCell': function(nTd, sData, oData, iRow, iCol){
@@ -42,6 +57,10 @@
                 { 
                 	'mDataProp': 'lastTime', 
                 	'sName': 'lastTime'
+                },
+                { 
+                	'mDataProp': 'serialNumber', 
+                	'sName': 'serialNumber'
                 },
                 { 
                 	'mDataProp': 'metaStatus', 
@@ -149,9 +168,13 @@
             oSettings.aoPreSearchCols[0].bRegex = false;
             oSettings.aoPreSearchCols[0].bSmart = true;
             
-            oSettings.aoPreSearchCols[1].sSearch = $('#metaStatus', $('#divMgrControllerSearch')).val();
+            oSettings.aoPreSearchCols[1].sSearch = $('#topControllerId', $('#divMgrControllerSearch')).val();
             oSettings.aoPreSearchCols[1].bRegex = false;
             oSettings.aoPreSearchCols[1].bSmart = true;
+            
+            oSettings.aoPreSearchCols[2].sSearch = $('#metaStatus', $('#divMgrControllerSearch')).val();
+            oSettings.aoPreSearchCols[2].bRegex = false;
+            oSettings.aoPreSearchCols[2].bSmart = true;
 
             oTbMgrController.fnDraw();
         });
@@ -258,6 +281,8 @@
 	function CreateMgrController(frmObj){
 		if (frmObj.valid()) {
             var MgrController = {
+            		topControllerId: $('#topControllerId', frmObj).val(),
+            		serialNumber: $('#serialNumber', frmObj).val(),
             		controllerName: $('#controllerName', frmObj).val(),
             		controllerCaption: $('#controllerCaption', frmObj).val(),
             		metaStatus: $('#metaStatus', frmObj).val()
@@ -291,8 +316,10 @@
             if (data.controllerId != undefined) {
                 var frmObj = $('#frm-EditMgrController');
                 $('#controllerId', frmObj).val(data.controllerId);
+                $('#topControllerId', frmObj).val(data.topControllerId);
                 $('#controllerName', frmObj).val(data.controllerName);
                 $('#controllerCaption', frmObj).val(data.controllerCaption);
+                $('#serialNumber', frmObj).val(data.serialNumber);
                 $('#metaStatus', frmObj).val(data.metaStatus);
                 frmObj.valid();
                 $('#digEditMgrController').dialog('open');
@@ -308,6 +335,8 @@
 		if (frmObj.valid()) {
             var MgrController = {
             		controllerId: $('#controllerId', frmObj).val(),
+            		topControllerId: $('#topControllerId', frmObj).val(),
+            		serialNumber: $('#serialNumber', frmObj).val(),
             		controllerName: $('#controllerName', frmObj).val(),
             		controllerCaption: $('#controllerCaption', frmObj).val(),
             		metaStatus: $('#metaStatus', frmObj).val()
@@ -364,6 +393,16 @@
 		<tr>
 			<td>Controller名称：<input name="controllerName" id="controllerName" style="width: 120px;" type="text" maxlength="18" value=""></td>
 			<td>
+				顶级Controller：
+				<select name="topControllerId" id="topControllerId">
+					<option value="">-所有-</option>
+               		<option value="0">顶级Controller</option>
+					{volist name="topControllerList" id="topControllerVal"}
+               			<option value="{$topControllerVal.controllerId}">{$topControllerVal.controllerName}</option>
+               		{/volist}
+				</select>
+			</td>
+			<td>
 				Controller状态：
 				<select name="metaStatus" id="metaStatus">
 					<option value="">-所有-</option>
@@ -383,19 +422,23 @@
 <div class="userbox" style="width: 100%;">
 	<table id="tbMgrController" class="ex_highlight" style="width:100%">
 		<colgroup>
+	        <col style="width:10%" />
+	        <col style="width:10%" />
+	        <col style="width:20%" />
 	        <col style="width:15%" />
-	        <col style="width:30%" />
 	        <col style="width:15%" />
-	        <col style="width:15%" />
-	        <col style="width:15%" />
+	        <col style="width:10%" />
+	        <col style="width:10%" />
 	        <col style="width:10%" />
 	    </colgroup>
 	    <thead>
 	        <tr>
 	            <th>Controller名称</th>
+	            <th>顶级Controller</th>
 	            <th>Controller描述</th>
 	            <th>创建时间</th>
 	            <th>最后操作时间</th>
+	            <th>排序</th>
 	            <th>菜单状态</th>
 	            <th class="control">操作</th>
 	        </tr>

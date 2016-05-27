@@ -53,8 +53,11 @@ class Response
         if (isset($this->contentTypes[$this->type])) {
             $this->contentType($this->contentTypes[$this->type]);
         }
-
-        $this->options = array_merge($this->options, $options);
+        if(!empty($options)){
+            $this->options = array_merge($this->options, $options);
+        }
+        // 方便获取某个类型的实例
+        self::$instance[$this->type] = $this;        
     }
 
     /**
@@ -97,8 +100,14 @@ class Response
             $data = call_user_func_array($this->transform, [$data]);
         }
 
+        defined('RESPONSE_TYPE') or define('RESPONSE_TYPE',$this->type);
+
         // 处理输出数据
         $data = $this->output($data);
+
+        // 监听response_data
+        Hook::listen('response_data', $data, $this);
+
         // 发送头部信息
         if (!headers_sent() && !empty($this->header)) {
             // 发送状态码
@@ -111,7 +120,12 @@ class Response
                 header($name . ':' . $val);
             }
         }
-        echo $data;
+        if (is_scalar($data)) {
+            echo $data;
+        } elseif (!is_null($data)) {
+            throw new Exception('不支持的数据类型输出：' . gettype($data));
+        }
+
         if (function_exists('fastcgi_finish_request')) {
             // 提高页面响应
             fastcgi_finish_request();

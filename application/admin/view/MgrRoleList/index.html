@@ -188,7 +188,7 @@
 				roleName: {
 					required: true,
 					remote: {
-						url: '{:url("checkControllerNameExist")}',
+						url: '{:url("checkRoleNameExist")}',
 						data: {
 							roleName: function(){return $('#roleName', $('#frm-CreateMgrRole')).val();}
 						}
@@ -224,7 +224,7 @@
 				roleName: {
 					required: true,
 					remote: {
-						url: '{:url("checkActionNameExist")}',
+						url: '{:url("checkRoleNameExist")}',
 						data: {
 							roleName: function(){return $('#roleName', $('#frm-EditMgrRole')).val();},
 							roleId: function(){return $('#roleId', $('#frm-EditMgrRole')).val();}
@@ -257,10 +257,17 @@
 <script type="text/javascript">
 	function CreateMgrRole(frmObj){
 		if (frmObj.valid()) {
-            var MgrRole = {
+            var rolePowerArr = new Array();
+            $('input[type="checkbox"]', frmObj).each(function(){
+            	if($(this).prop('checked')){
+            		rolePowerArr.push({powerId: $(this).val()});	
+            	}
+            });
+			var MgrRole = {
             		roleName: $('#roleName', frmObj).val(),
             		roleCaption: $('#roleCaption', frmObj).val(),
-            		metaStatus: $('#metaStatus', frmObj).val()
+            		metaStatus: $('#metaStatus', frmObj).val(),
+            		mgrRolePower: rolePowerArr
             };
             $.ajaxJsonPost({
                 url: frmObj.attr('action'),
@@ -294,6 +301,16 @@
                 $('#roleName', frmObj).val(data.roleName);
                 $('#roleCaption', frmObj).val(data.roleCaption);
                 $('#metaStatus', frmObj).val(data.metaStatus);
+                $('input[type="checkbox"]', frmObj).each(function(){
+                	var blChecked = false;
+                	for(var i=0; i< data.mgrRolePower.length; i++){
+                		if($(this).val() == data.mgrRolePower[i].powerId){
+                			blChecked = true;
+                			break;
+                		}
+                	}
+                	$(this).prop('checked', blChecked);
+                });
                 frmObj.valid();
                 $('#digEditMgrRole').dialog('open');
             } else {
@@ -306,11 +323,18 @@
     };
 	function EditMgrRole(frmObj){
 		if (frmObj.valid()) {
+			var rolePowerArr = [];
+            $('input[type="checkbox"]', frmObj).each(function(){
+            	if($(this).prop('checked')){
+            		rolePowerArr.push({powerId: $(this).val()});	
+            	}
+            });
             var MgrRole = {
             		roleId: $('#roleId', frmObj).val(),
             		roleName: $('#roleName', frmObj).val(),
             		roleCaption: $('#roleCaption', frmObj).val(),
-            		metaStatus: $('#metaStatus', frmObj).val()
+            		metaStatus: $('#metaStatus', frmObj).val(),
+            		mgrRolePower: rolePowerArr
             };
             $.ajaxJsonPost({
                 url: frmObj.attr('action'),

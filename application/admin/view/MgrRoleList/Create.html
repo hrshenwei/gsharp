@@ -14,7 +14,20 @@
             <tr>
             	<td class="editor-label">角色描述:</td>
                 <td class="editor-field">
-                	<input name="roleCaption" id="roleCaption" style="width: 360px; height:200px;" type="text" value="">
+                	<input name="roleCaption" id="roleCaption" style="width: 360px;" type="text" value="">
+                </td>
+            </tr>
+            <tr>
+            	<td class="editor-label">角色权限:</td>
+            	<td class="editor-field">
+            		{volist name="controllerList" id="controllerVal"}
+                		{$controllerVal.controllerCaption}&nbsp;&nbsp;&nbsp;
+                		{volist name="controllerVal['mgrPower']" id="powerVal"}
+                			<input type="checkbox" id="chkCreate_{$powerVal.powerId}" name="chkCreate_{$powerVal.powerId}" value="{$powerVal.powerId}" />
+                			<label title="{$controllerVal.controllerCaption}-{$powerVal.mgrAction.actionCaption}" for="chkCreate_{$powerVal.powerId}">{$powerVal.mgrAction.actionCaption}</label>
+	               		{/volist}
+	               		<br />
+               		{/volist}                	
                 </td>
             </tr>
             <tr>

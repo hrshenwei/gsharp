@@ -11,10 +11,10 @@
 
 namespace think;
 
+use think\console\Output as ConsoleOutput;
 use think\exception\ErrorException;
 use think\exception\Handle;
 use think\exception\ThrowableError;
-use think\console\Output as ConsoleOutput;
 
 class Error
 {
@@ -24,7 +24,7 @@ class Error
      */
     public static function register()
     {
-        error_reporting(-1);
+        error_reporting(E_ALL);
         set_error_handler([__CLASS__, 'appError']);
         set_exception_handler([__CLASS__, 'appException']);
         register_shutdown_function([__CLASS__, 'appShutdown']);
@@ -59,7 +59,6 @@ class Error
      * @param  string  $errfile 出错的文件
      * @param  integer $errline 出错行号
      * @param array    $errcontext
-     * @return bool true-禁止往下传播已处理过的异常
      * @throws ErrorException
      */
     public static function appError($errno, $errstr, $errfile = '', $errline = 0, $errcontext = [])
@@ -96,7 +95,6 @@ class Error
     {
         return in_array($type, [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE]);
     }
-
 
     /**
      * Get an instance of the exception handler.

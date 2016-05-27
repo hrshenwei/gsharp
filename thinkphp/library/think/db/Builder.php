@@ -85,7 +85,7 @@ abstract class Builder
         if ('*' == $options['field']) {
             $fields = array_keys($bind);
         } else {
-            $fields = is_array($options['field']) ? $options['field'] : explode(',', $options['field']);
+            $fields = $options['field'];
         }
 
         $result = [];
@@ -263,6 +263,7 @@ abstract class Builder
                     }
                 }
             }
+
             $whereStr .= empty($whereStr) ? substr(implode(' ', $str), strlen($key) + 1) : implode(' ', $str);
         }
         return $whereStr;
@@ -567,7 +568,7 @@ abstract class Builder
         if ('*' == $options['field']) {
             $fields = $this->query->getTableInfo($options['table'], 'fields');
         } else {
-            $fields = is_array($options['field']) ? $options['field'] : explode(',', $options['field']);
+            $fields = $options['field'];
         }
 
         foreach ($dataSet as &$data) {
@@ -612,8 +613,7 @@ abstract class Builder
         }
 
         $fields = array_map([$this, 'parseKey'], $fields);
-        $sql    = 'INSERT INTO ' . $this->parseTable($table) . ' (' . implode(',', $fields) . ') ';
-        $sql .= $this->buildSelectSql($options);
+        $sql    = 'INSERT INTO ' . $this->parseTable($table) . ' (' . implode(',', $fields) . ') ' . $this->select($options);
         return $sql;
     }
 

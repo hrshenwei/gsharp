@@ -5,6 +5,7 @@ use app\admin\model\MgrRole;
 use app\admin\common\JQueryDataTableParamModel;
 use app\admin\model\MgrPower;
 use app\admin\model\MgrController;
+use app\admin\model\app\admin\model;
 /**
  * File Name: MgrRoleList.php
  * Author Name: ShenWei
@@ -70,13 +71,13 @@ public function index(){
 			try {
 				$roleName = input('post.roleName');
 				$where['roleName'] = $roleName;
-				$mgrMenuCount = MgrRole::where($where)->count();
-				if($mgrMenuCount === 0){
-					$mgrMenu = new MgrRole($_POST);
-					$mgrMenu->createTime = date('Y-m-d H:i:s');
-					$mgrMenu->lastTime = date('Y-m-d H:i:s');
+				$mgrRoleCount = MgrRole::where($where)->count();
+				if($mgrRoleCount === 0){
+					$mgrRole = new MgrRole($_POST);
+					$mgrRole->createTime = date('Y-m-d H:i:s');
+					$mgrRole->lastTime = date('Y-m-d H:i:s');
 						
-					$mgrMenu->save();
+					$mgrRole->tranCreate();
 					$result['bSuccess'] = true;
 					$result['message'] = '保存成功';
 				}
@@ -109,11 +110,12 @@ public function index(){
 				$roleName = input('post.roleName');
 				$where['roleId'] = array('neq', $roleId);
 				$where['roleName'] = $roleName;
-				$mgrMenuCount = MgrRole::where($where)->count();
-				if($mgrMenuCount === 0){
-					$postMgrRoleData = $_POST;
-					$postMgrRoleData['lastTime'] = date('Y-m-d H:i:s');
-					MgrRole::update($postMgrRoleData);
+				$mgrRoleCount = MgrRole::where($where)->count();
+				if($mgrRoleCount === 0){
+					$dbMgrRole = new MgrRole($_POST);
+					$dbMgrRole->lastTime = date('Y-m-d H:i:s');
+					$dbMgrRole->tranUpdate();
+					//MgrRole::update($postMgrRoleData);
 						
 					$result['bSuccess'] = true;
 					$result['message'] = '保存成功';
@@ -130,7 +132,7 @@ public function index(){
 		else{
 			$roleId = input('get.roleId');
 			if(isset($roleId)){
-				$data = MgrRole::find($roleId);
+				$data = MgrRole::with('mgrRolePower')->find($roleId);
 				return $data;
 			}
 		}
@@ -148,16 +150,16 @@ public function index(){
 			$where['roleName'] = $value;
 			$where['roleId'] = ['neq', $roleId];
 				
-			$mgrMenuCount = MgrRole::where($where)->count();
-			if($mgrMenuCount === 0){
-				$mgrMenu = new MgrRole();
-				$mgrMenu->save([$columnName => $value],['roleId' => $roleId]);
+			$mgrRoleCount = MgrRole::where($where)->count();
+			if($mgrRoleCount === 0){
+				$mgrRole = new MgrRole();
+				$mgrRole->save([$columnName => $value],['roleId' => $roleId]);
 				$reVal = $value;
 			}
 		}
 		else{
-			$mgrMenu = new MgrRole();
-			$mgrMenu->save([$columnName => $value],['roleId' => $roleId]);
+			$mgrRole = new MgrRole();
+			$mgrRole->save([$columnName => $value],['roleId' => $roleId]);
 			$reVal = $value;
 		}
 		echo $reVal;
@@ -180,7 +182,7 @@ public function index(){
 	/**
 	 * 判断菜单名称是否存在
 	 */
-	public function checkControllerNameExist(){
+	public function checkRoleNameExist(){
 		$roleId = input('get.roleId');
 		$roleName = input('get.roleName');
 		$where['roleName'] = $roleName;

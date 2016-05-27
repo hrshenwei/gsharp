@@ -50,6 +50,8 @@ return [
     'empty_controller'       => 'Error',
     // 操作方法后缀
     'action_suffix'          => '',
+    // 自动搜索控制器
+    'controller_auto_search' => false,
 
     // +----------------------------------------------------------------------
     // | URL设置
@@ -73,8 +75,6 @@ return [
     'url_route_on'           => true,
     // 是否强制使用路由
     'url_route_must'         => false,
-    // URL模块映射
-    'url_module_map'         => [],
     // 域名部署
     'url_domain_deploy'      => false,
     // 域名根，如.thinkphp.cn
@@ -122,8 +122,6 @@ return [
 
     // 错误显示信息,非调试模式有效
     'error_message'          => '页面错误！请稍后再试～',
-    // 错误定向页面
-    'error_page'             => '',
     // 显示错误信息
     'show_error_msg'         => false,
 
@@ -170,40 +168,64 @@ return [
     ],
 
     // +----------------------------------------------------------------------
+    // | Cookie设置
+    // +----------------------------------------------------------------------
+    'cookie'                 => [
+        // cookie 名称前缀
+        'prefix'    => '',
+        // cookie 保存时间
+        'expire'    => 0,
+        // cookie 保存路径
+        'path'      => '/',
+        // cookie 有效域名
+        'domain'    => '',
+        //  cookie 启用安全传输
+        'secure'    => false,
+        // httponly设置
+        'httponly'  => '',
+        // 是否使用 setcookie
+        'setcookie' => true,
+    ],
+
+    // +----------------------------------------------------------------------
     // | 数据库设置
     // +----------------------------------------------------------------------
 
     'database'               => [
         // 数据库类型
-        'type'        => 'mysql',
+        'type'           => 'mysql',
         // 数据库连接DSN配置
-        'dsn'         => '',
+        'dsn'            => '',
         // 服务器地址
-        'hostname'    => 'localhost',
+        'hostname'       => 'localhost',
         // 数据库名
-        'database'    => '',
+        'database'       => '',
         // 数据库用户名
-        'username'    => 'root',
+        'username'       => 'root',
         // 数据库密码
-        'password'    => '',
+        'password'       => '',
         // 数据库连接端口
-        'hostport'    => '',
+        'hostport'       => '',
         // 数据库连接参数
-        'params'      => [],
+        'params'         => [],
         // 数据库编码默认采用utf8
-        'charset'     => 'utf8',
+        'charset'        => 'utf8',
         // 数据库表前缀
-        'prefix'      => '',
+        'prefix'         => '',
         // 数据库调试模式
-        'debug'       => false,
+        'debug'          => false,
         // 数据库部署方式:0 集中式(单一服务器),1 分布式(主从服务器)
-        'deploy'      => 0,
+        'deploy'         => 0,
         // 数据库读写是否分离 主从式有效
-        'rw_separate' => false,
+        'rw_separate'    => false,
         // 读写分离后 主服务器数量
-        'master_num'  => 1,
+        'master_num'     => 1,
         // 指定从服务器序号
-        'slave_no'    => '',
+        'slave_no'       => '',
+        // 是否严格检查字段是否存在
+        'fields_strict'  => true,
+        // 自动写入时间戳字段
+        'auto_timestamp' => false,
     ],
     //分页配置
     'paginate'               => [

@@ -64,7 +64,7 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
     // 更新自动完成列表
     protected $update = [];
     // 是否需要自动写入时间戳
-    protected $autoWriteTimestamp = true;
+    protected $autoWriteTimestamp;
     // 创建时间字段
     protected $createTime = 'create_time';
     // 更新时间字段
@@ -109,6 +109,10 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
 
         if (empty($this->name)) {
             $this->name = basename(str_replace('\\', '/', $this->class));
+        }
+
+        if (is_null($this->autoWriteTimestamp)) {
+            $this->autoWriteTimestamp = $this->db()->getConfig('auto_timestamp');
         }
 
         // 执行初始化操作
@@ -318,7 +322,7 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
         $this->autoCompleteData($this->auto);
 
         // 自动写入更新时间
-        if ($this->autoWriteTimestamp) {
+        if ($this->autoWriteTimestamp && $this->updateTime) {
             $this->__set($this->updateTime, null);
         }
 
@@ -364,7 +368,7 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
             $this->autoCompleteData($this->insert);
 
             // 自动写入创建时间
-            if ($this->autoWriteTimestamp) {
+            if ($this->autoWriteTimestamp && $this->createTime) {
                 $this->__set($this->createTime, null);
             }
 
@@ -516,7 +520,7 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
         if (!empty($this->validate)) {
             $info = $this->validate;
             if (is_array($info)) {
-                $validate = Loader::validate(Config::get('default_validate'));
+                $validate = Loader::validate();
                 $validate->rule($info['rule']);
                 $validate->message($info['msg']);
             } else {
@@ -736,10 +740,16 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
         $model = new static();
         $info  = $model->$relation()->getRelationInfo();
         $table = $info['model']::getTable();
-        return $model->db()->alias('a')
-            ->join($table . ' b', 'a.' . $info['localKey'] . '=b.' . $info['foreignKey'])
-            ->group('b.' . $info['foreignKey'])
-            ->having('count(' . $id . ')' . $operator . $count);
+        switch ($info['type']) {
+            case Relation::HAS_MANY:
+                return $model->db()->alias('a')
+                    ->join($table . ' b', 'a.' . $info['localKey'] . '=b.' . $info['foreignKey'])
+                    ->group('b.' . $info['foreignKey'])
+                    ->having('count(' . $id . ')' . $operator . $count);
+            case Relation::HAS_MANY_THROUGH:
+                // TODO
+        }
+
     }
 
     /**
@@ -753,19 +763,24 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
     {
         $model = new static();
         $info  = $model->$relation()->getRelationInfo();
-        $table = $info['model']::getTable();
-        if (is_array($where)) {
-            foreach ($where as $key => $val) {
-                if (false === strpos($key, '.')) {
-                    $where['b.' . $key] = $val;
-                    unset($where[$key]);
+        switch ($info['type']) {
+            case Relation::HAS_MANY:
+                $table = $info['model']::getTable();
+                if (is_array($where)) {
+                    foreach ($where as $key => $val) {
+                        if (false === strpos($key, '.')) {
+                            $where['b.' . $key] = $val;
+                            unset($where[$key]);
+                        }
+                    }
                 }
-            }
+                return $model->db()->alias('a')
+                    ->field('a.*')
+                    ->join($table . ' b', 'a.' . $info['localKey'] . '=b.' . $info['foreignKey'])
+                    ->where($where);
+            case Relation::HAS_MANY_THROUGH:
+                // TODO
         }
-        return $model->db()->alias('a')
-            ->field('a.*')
-            ->join($table . ' b', 'a.' . $info['localKey'] . '=b.' . $info['foreignKey'])
-            ->where($where);
     }
 
     /**
@@ -833,15 +848,16 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
      * @param string $model 模型名
      * @param string $foreignKey 关联外键
      * @param string $localKey 关联主键
+     * @param array  $alias 别名定义
      * @return \think\db\Query|string
      */
-    public function hasOne($model, $foreignKey = '', $localKey = '')
+    public function hasOne($model, $foreignKey = '', $localKey = '', $alias = [])
     {
         // 记录当前关联信息
         $model      = $this->parseModel($model);
         $localKey   = $localKey ?: $this->getPk();
         $foreignKey = $foreignKey ?: Loader::parseName($this->name) . '_id';
-        return $this->relation()->hasOne($model, $foreignKey, $localKey);
+        return $this->relation()->hasOne($model, $foreignKey, $localKey, $alias);
     }
 
     /**
@@ -850,15 +866,16 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
      * @param string $model 模型名
      * @param string $foreignKey 关联外键
      * @param string $otherKey 关联主键
+     * @param array  $alias 别名定义
      * @return \think\db\Query|string
      */
-    public function belongsTo($model, $foreignKey = '', $otherKey = '')
+    public function belongsTo($model, $foreignKey = '', $otherKey = '', $alias = [])
     {
         // 记录当前关联信息
         $model      = $this->parseModel($model);
         $foreignKey = $foreignKey ?: Loader::parseName(basename(str_replace('\\', '/', $model))) . '_id';
         $otherKey   = $otherKey ?: (new $model)->getPk();
-        return $this->relation()->belongsTo($model, $foreignKey, $otherKey);
+        return $this->relation()->belongsTo($model, $foreignKey, $otherKey, $alias);
     }
 
     /**
@@ -867,15 +884,39 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
      * @param string $model 模型名
      * @param string $foreignKey 关联外键
      * @param string $localKey 关联主键
+     * @param array  $alias 别名定义
      * @return \think\db\Query|string
      */
-    public function hasMany($model, $foreignKey = '', $localKey = '')
+    public function hasMany($model, $foreignKey = '', $localKey = '', $alias = [])
     {
         // 记录当前关联信息
         $model      = $this->parseModel($model);
         $localKey   = $localKey ?: $this->getPk();
         $foreignKey = $foreignKey ?: Loader::parseName($this->name) . '_id';
-        return $this->relation()->hasMany($model, $foreignKey, $localKey);
+        return $this->relation()->hasMany($model, $foreignKey, $localKey, $alias);
+    }
+
+    /**
+     * HAS MANY 远程关联定义
+     * @access public
+     * @param string $model 模型名
+     * @param string $through 中间模型名
+     * @param string $foreignKey 关联外键
+     * @param string $throughKey 关联外键
+     * @param string $localKey 关联主键
+     * @param array  $alias 别名定义
+     * @return \think\db\Query|string
+     */
+    public function hasManyThrough($model, $through, $foreignKey = '', $throughKey = '', $localKey = '', $alias = [])
+    {
+        // 记录当前关联信息
+        $model      = $this->parseModel($model);
+        $through    = $this->parseModel($through);
+        $localKey   = $localKey ?: $this->getPk();
+        $foreignKey = $foreignKey ?: Loader::parseName($this->name) . '_id';
+        $name       = Loader::parseName(basename(str_replace('\\', '/', $through)));
+        $throughKey = $throughKey ?: $name . '_id';
+        return $this->relation()->hasManyThrough($model, $through, $foreignKey, $throughKey, $localKey, $alias);
     }
 
     /**
@@ -885,9 +926,10 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
      * @param string $table 中间表名
      * @param string $foreignKey 关联外键
      * @param string $localKey 当前模型关联键
+     * @param array  $alias 别名定义
      * @return \think\db\Query|string
      */
-    public function belongsToMany($model, $table = '', $foreignKey = '', $localKey = '')
+    public function belongsToMany($model, $table = '', $foreignKey = '', $localKey = '', $alias = [])
     {
         // 记录当前关联信息
         $model      = $this->parseModel($model);
@@ -895,7 +937,7 @@ abstract class Model implements \JsonSerializable, \ArrayAccess
         $table      = $table ?: Db::name(Loader::parseName($this->name) . '_' . $name)->getTable();
         $foreignKey = $foreignKey ?: $name . '_id';
         $localKey   = $localKey ?: Loader::parseName($this->name) . '_id';
-        return $this->relation()->belongsToMany($model, $table, $foreignKey, $localKey);
+        return $this->relation()->belongsToMany($model, $table, $foreignKey, $localKey, $alias);
     }
 
     /**

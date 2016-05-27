@@ -22,14 +22,13 @@
             	<td class="editor-label">角色权限:</td>
             	<td class="editor-field">
             		{volist name="controllerList" id="controllerVal"}
-                		{$controllerVal.controllerCaption}({$controllerVal.controllerName})
+                		{$controllerVal.controllerCaption}&nbsp;&nbsp;&nbsp;
                 		{volist name="controllerVal['mgrPower']" id="powerVal"}
-	                		{if condition="$controllerVal.controllerId eq $powerVal.controllerId"}
-	                			{$powerVal.mgrController.controllerName}-{$powerVal.mgrAction.actionName}
-	                		{/if}
+                			<input type="checkbox" id="chkEdit_{$powerVal.powerId}" name="chkEdit_{$powerVal.powerId}" value="{$powerVal.powerId}" />
+                			<label title="{$controllerVal.controllerCaption}-{$powerVal.mgrAction.actionCaption}" for="chkEdit_{$powerVal.powerId}">{$powerVal.mgrAction.actionCaption}</label>
 	               		{/volist}
 	               		<br />
-               		{/volist}                	
+               		{/volist}      	
                 </td>
             </tr>
             <tr>

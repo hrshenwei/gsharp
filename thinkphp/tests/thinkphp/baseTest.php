@@ -39,19 +39,11 @@ class baseTest extends \PHPUnit_Framework_TestCase
         $this->assertNotEmpty(VIEW_LAYER);
         $this->assertNotEmpty(CONTROLLER_LAYER);
         $this->assertTrue(is_bool(APP_DEBUG));
-        $this->assertTrue(is_bool(APP_HOOK));
         $this->assertNotEmpty(ENV_PREFIX);
         $this->assertTrue(is_bool(IS_API));
         $this->assertNotEmpty(APP_MODE);
         $this->assertTrue(!is_null(IS_CGI));
         $this->assertTrue(!is_null(IS_WIN));
         $this->assertTrue(!is_null(IS_CLI));
-        $this->assertTrue(is_bool(IS_AJAX));
-        $this->assertNotEmpty(NOW_TIME);
-        $this->assertNotEmpty(REQUEST_METHOD);
-        $this->assertTrue(is_bool(IS_GET));
-        $this->assertTrue(is_bool(IS_POST));
-        $this->assertTrue(is_bool(IS_PUT));
-        $this->assertTrue(is_bool(IS_DELETE));
     }
 }

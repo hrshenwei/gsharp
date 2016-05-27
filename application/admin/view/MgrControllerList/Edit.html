@@ -6,6 +6,17 @@
         </colgroup>
         <tbody>
         	<tr>
+                <td class="editor-label">顶级Controller:</td>
+                <td class="editor-field" colspan="3">
+                	<select name="topControllerId" id="topControllerId">
+                		<option value="0">-顶级-</option>
+						{volist name="topControllerList" id="topControllerVal"}
+                			<option value="{$topControllerVal.controllerId}">{$topControllerVal.controllerName}</option>
+                		{/volist}
+					</select>
+                </td>
+            </tr>
+        	<tr>
                 <td class="editor-label">Controller名称:</td>
                 <td class="editor-field">
                 	<input type="hidden" id="controllerId" name="controllerId" />
@@ -18,6 +29,12 @@
                 	<input name="controllerCaption" id="controllerCaption" style="width: 360px; height:200px;" type="text" value="">
                 </td>
             </tr>
+            <tr>
+                <td class="editor-label">排序:</td>
+                <td class="editor-field">
+                	<input name="serialNumber" id="serialNumber" style="width: 120px;" type="text" value="">
+                </td>
+            <tr>
             <tr>
                 <td class="editor-label">状态:</td>
                 <td class="editor-field" colspan="3">

@@ -166,12 +166,9 @@ class Merge extends Model
         $this->autoCompleteData($this->auto);
 
         // 自动写入更新时间
-        if ($this->autoWriteTimestamp) {
+        if ($this->autoWriteTimestamp && $this->updateTime) {
             $this->__set($this->updateTime, null);
         }
-
-        // 处理模型数据
-        $data = $this->parseData($this->name, $this->data);
 
         $db = $this->db();
         $db->startTrans('merge_save_' . $this->name);
@@ -184,6 +181,8 @@ class Merge extends Model
                     return false;
                 }
 
+                // 处理模型数据
+                $data = $this->parseData($this->name, $this->data);
                 // 写入主表数据
                 $result = $db->strict(false)->update($data);
 
@@ -203,7 +202,7 @@ class Merge extends Model
                 $this->autoCompleteData($this->insert);
 
                 // 自动写入创建时间
-                if ($this->autoWriteTimestamp) {
+                if ($this->autoWriteTimestamp && $this->createTime) {
                     $this->__set($this->createTime, null);
                 }
 
@@ -211,8 +210,10 @@ class Merge extends Model
                     return false;
                 }
 
+                // 处理模型数据
+                $data = $this->parseData($this->name, $this->data);
                 // 写入主表数据
-                $result = $db->name($this->name)->strict(false)->insert($this->data);
+                $result = $db->name($this->name)->strict(false)->insert($data);
                 if ($result) {
                     $insertId = $db->getLastInsID();
                     // 写入外键数据

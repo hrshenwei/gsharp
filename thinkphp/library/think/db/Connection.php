@@ -99,6 +99,8 @@ abstract class Connection
         'fields_strict'  => true,
         // 数据集返回类型
         'resultset_type' => Db::RESULTSET_ARRAY,
+        // 自动写入时间戳字段
+        'auto_timestamp' => false,
     ];
 
     // PDO连接参数
@@ -212,9 +214,9 @@ abstract class Connection
      * @param string $config 配置名称
      * @return mixed
      */
-    public function getConfig($config)
+    public function getConfig($config = '')
     {
-        return $this->config[$config];
+        return $config ? $this->config[$config] : $this->config;
     }
 
     /**
@@ -354,7 +356,8 @@ abstract class Connection
             $result = $this->PDOStatement->execute();
             // 调试结束
             $this->debug(false);
-            return $this->getResult($class);
+            $procedure = 0 === strpos(strtolower(substr(trim($sql), 0, 4)), 'call');
+            return $this->getResult($class, $procedure);
         } catch (\PDOException $e) {
             throw new PDOException($e, $this->config, $this->queryStr);
         }
@@ -430,7 +433,10 @@ abstract class Connection
                 // 判断占位符
                 $sql = is_numeric($key) ?
                 substr_replace($sql, $val, strpos($sql, '?'), 1) :
-                str_replace([':' . $key . ')', ':' . $key . ' '], [$val . ')', $val . ' '], $sql . ' ');
+                str_replace(
+                    [':' . $key . ')', ':' . $key . ',', ':' . $key . ' '],
+                    [$val . ')', $val . ',', $val . ' '],
+                    $sql . ' ');
             }
         }
         return $sql;
@@ -470,13 +476,17 @@ abstract class Connection
      * 获得数据集
      * @access protected
      * @param bool|string $class true 返回PDOStatement 字符串用于指定返回的类名
+     * @param bool $procedure 是否存储过程
      * @return mixed
      */
-    protected function getResult($class = '')
+    protected function getResult($class = '', $procedure = false)
     {
         if (true === $class) {
             // 返回PDOStatement对象处理
             return $this->PDOStatement;
+        }
+        if ($procedure) {
+            return $this->procedure($class);
         }
         $result        = $this->PDOStatement->fetchAll($this->fetchType);
         $this->numRows = count($result);
@@ -497,6 +507,25 @@ abstract class Connection
                 // 返回二维数组
         }
         return $result;
+    }
+
+    /**
+     * 获得存储过程数据集
+     * @access protected
+     * @param bool|string $class true 返回PDOStatement 字符串用于指定返回的类名
+     * @return array
+     */
+    protected function procedure($class)
+    {
+        $item = [];
+        do {
+            $result = $this->getResult($class);
+            if ($result) {
+                $item[] = $result;
+            }
+        } while ($this->PDOStatement->nextRowset());
+        $this->numRows = count($item);
+        return $item;
     }
 
     /**

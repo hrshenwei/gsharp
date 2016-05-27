@@ -124,7 +124,7 @@ class Query
     {
         if ($name || empty($this->table)) {
             $name      = $name ?: $this->name;
-            $tableName = $this->connection->getConfig('prefix');
+            $tableName = $this->getConfig('prefix');
             if ($name) {
                 $tableName .= Loader::parseName($name);
             }
@@ -185,7 +185,7 @@ class Query
      */
     public function getLastSql()
     {
-        return $this->connection->queryStr;
+        return $this->connection->getLastSql();
     }
 
     /**
@@ -243,6 +243,17 @@ class Query
     public function batchQuery($sql = [])
     {
         return $this->connection->batchQuery($sql);
+    }
+
+    /**
+     * 获取数据库的配置参数
+     * @access public
+     * @param string $name 参数名称
+     * @return boolean
+     */
+    public function getConfig($name = '')
+    {
+        return $this->connection->getConfig($name);
     }
 
     /**
@@ -532,7 +543,7 @@ class Query
                 }
             }
         } else {
-            $prefix = $this->connection->getConfig('prefix');
+            $prefix = $this->getConfig('prefix');
             // 传入的表名为数组
             if (is_array($join)) {
                 if (0 !== $key = key($join)) {
@@ -602,12 +613,12 @@ class Query
             return $this;
         }
         if (is_string($field)) {
-            $field = explode(',', $field);
+            $field = array_map('trim', explode(',', $field));
         }
         if (true === $field) {
             // 获取全部字段
             $fields = $this->getTableInfo($tableName, 'fields');
-            $field  = $fields ?: '*';
+            $field  = $fields ?: ['*'];
         } elseif ($except) {
             // 字段排除
             $fields = $this->getTableInfo($tableName, 'fields');
@@ -628,6 +639,57 @@ class Query
             $field = array_merge($this->options['field'], $field);
         }
         $this->options['field'] = $field;
+        return $this;
+    }
+
+    /**
+     * 指定JOIN查询字段
+     * @access public
+     * @param string|array $table 数据表
+     * @param string|array $field 查询字段
+     * @param string|array $on JOIN条件
+     * @param string $type JOIN类型
+     * @return $this
+     */
+    public function view($join, $field = null, $on = null, $type = 'INNER')
+    {
+        $this->options['view'] = true;
+        if (is_array($join) && is_null($field)) {
+            foreach ($join as $key => $val) {
+                $this->view($key, $val[0], isset($val[1]) ? $val[1] : null, isset($val[2]) ? $val[2] : 'INNER');
+            }
+        } else {
+            $fields = [];
+            if (is_array($join)) {
+                // 支持数据表别名
+                list($join, $alias, $table) = array_pad($join, 3, '');
+            } else {
+                $alias = $join;
+            }
+            $table = !empty($table) ? $table : $this->getTable($join);
+            if(true === $field){
+                $fields = $alias . '.*';
+            }else{
+                if (is_string($field)) {
+                    $field = explode(',', $field);
+                }
+                foreach ($field as $key => $val) {
+                    if (is_numeric($key)) {
+                        $fields[]                   = $alias . '.' . $val;
+                        $this->options['map'][$val] = $alias . '.' . $val;
+                    } else {
+                        $fields[]                   = $alias . '.' . $key . ' AS ' . $val;
+                        $this->options['map'][$val] = $alias . '.' . $key;
+                    }
+                }                
+            }
+            $this->field($fields);
+            if ($on) {
+                $this->join($table . ' ' . $alias, $on, $type);
+            } else {
+                $this->table($table . ' ' . $alias);
+            }
+        }
         return $this;
     }
 
@@ -675,7 +737,7 @@ class Query
     protected function parseWhereExp($operator, $field, $op, $condition, $param = [])
     {
         if ($field instanceof \Closure) {
-            call_user_func_array($field, [ & $this]);
+            $this->options['where'][$operator][] = $field;
             return;
         }
 
@@ -1236,13 +1298,15 @@ class Query
                 if (0 == $i) {
                     $name  = Loader::parseName(basename(str_replace('\\', '/', $currentModel)));
                     $table = $this->getTable();
-                    $this->table($table)->alias($name)->field(true, false, $table, $name);
+                    $alias = isset($info['alias'][$name]) ? $info['alias'][$name] : $name;
+                    $this->table($table)->alias($alias)->field(true, false, $table, $alias);
                 }
                 // 预载入封装
                 $joinTable = $model->getTable();
                 $joinName  = Loader::parseName(basename(str_replace('\\', '/', $info['model'])));
-                $this->via($joinName);
-                $this->join($joinTable . ' ' . $joinName, $name . '.' . $info['localKey'] . '=' . $joinName . '.' . $info['foreignKey'])->field(true, false, $joinTable, $joinName, $joinName . '__');
+                $joinAlias = isset($info['alias'][$joinName]) ? $info['alias'][$joinName] : $joinName;
+                $this->via($joinAlias);
+                $this->join($joinTable . ' ' . $joinAlias, $alias . '.' . $info['localKey'] . '=' . $joinAlias . '.' . $info['foreignKey'])->field(true, false, $joinTable, $joinAlias, $joinName . '__');
                 if ($closure) {
                     // 执行闭包查询
                     call_user_func_array($closure, [ & $this]);
@@ -1692,6 +1756,49 @@ class Query
 
         if (!isset($options['where'])) {
             $options['where'] = [];
+        } elseif (isset($options['view'])) {
+            if (isset($options['where']['AND'])) {
+                foreach ($options['where']['AND'] as $key => $val) {
+                    if (array_key_exists($key, $options['map'])) {
+                        $options['where']['AND'][$options['map'][$key]] = $val;
+                        unset($options['where']['AND'][$key]);
+                    }
+                }
+            }
+            if (isset($options['where']['OR'])) {
+                foreach ($options['where']['OR'] as $key => $val) {
+                    if (array_key_exists($key, $options['map'])) {
+                        $options['where']['OR'][$options['map'][$key]] = $val;
+                        unset($options['where']['OR'][$key]);
+                    }
+                }
+            }
+            if (isset($options['order'])) {
+                if (is_string($options['order'])) {
+                    $options['order'] = explode(',', $options['order']);
+                }
+                foreach ($options['order'] as $key => $val) {
+                    if (is_numeric($key)) {
+                        if (strpos($val, ' ')) {
+                            list($field, $sort) = explode(' ', $val);
+                            if (array_key_exists($field, $options['map'])) {
+                                $options['order'][$options['map'][$field]] = $sort;
+                                unset($options['order'][$key]);
+                            }
+                        } else {
+                            if (array_key_exists($val, $options['map'])) {
+                                $options['order'][$options['map'][$val]] = 'asc';
+                                unset($options['order'][$key]);
+                            }
+                        }
+                    } else {
+                        if (array_key_exists($key, $options['map'])) {
+                            $options['order'][$options['map'][$key]] = $val;
+                            unset($options['order'][$key]);
+                        }
+                    }
+                }
+            }
         }
 
         // 表别名
@@ -1704,7 +1811,7 @@ class Query
         }
 
         if (!isset($options['strict'])) {
-            $options['strict'] = $this->connection->getConfig('fields_strict');
+            $options['strict'] = $this->getConfig('fields_strict');
         }
 
         foreach (['master', 'lock', 'fetch_class', 'fetch_sql', 'distinct'] as $name) {

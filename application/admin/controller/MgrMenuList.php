@@ -138,13 +138,13 @@ class MgrMenuList extends AuthorizedController{
 			} catch (Exception $e) {
 				$result['message'] = $e;
 			}
-			return json_encode($result);
+			return $result;
 		}
 		else{
 			$mgrMenuId = input('get.mgrMenuId');
 			if(isset($mgrMenuId)){
 				$data = MgrMenu::find($mgrMenuId);
-				return json_encode($data);
+				return $data;
 			}
 		}
 	}

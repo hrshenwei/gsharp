@@ -32,6 +32,7 @@ defined('CACHE_PATH') or define('CACHE_PATH', RUNTIME_PATH . 'cache' . DS);
 defined('TEMP_PATH') or define('TEMP_PATH', RUNTIME_PATH . 'temp' . DS);
 defined('VENDOR_PATH') or define('VENDOR_PATH', ROOT_PATH . 'vendor' . DS);
 defined('EXT') or define('EXT', '.php');
+defined('CONF_PATH') or define('CONF_PATH', APP_PATH); // 配置文件目录
 defined('CONF_EXT') or define('CONF_EXT', EXT); // 配置文件后缀
 defined('MODEL_LAYER') or define('MODEL_LAYER', 'model');
 defined('VIEW_LAYER') or define('VIEW_LAYER', 'view');
@@ -44,18 +45,11 @@ defined('APP_AUTO_RUN') or define('APP_AUTO_RUN', true); // 是否自动运行
 defined('APP_ROUTE_ON') or define('APP_ROUTE_ON', true); // 是否允许路由
 defined('APP_ROUTE_MUST') or define('APP_ROUTE_MUST', true); // 是否严格检查路由
 defined('CLASS_APPEND_SUFFIX') or define('CLASS_APPEND_SUFFIX', false); // 是否追加类名后缀
-// 应用模式 默认为普通模式
-defined('APP_MODE') or define('APP_MODE', function_exists('saeAutoLoader') ? 'sae' : 'common');
+defined('APP_MODE') or define('APP_MODE', 'common'); // 应用模式 默认为普通模式
 
 // 环境常量
 define('IS_CGI', strpos(PHP_SAPI, 'cgi') === 0 ? 1 : 0);
+define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
 define('IS_WIN', strstr(PHP_OS, 'WIN') ? 1 : 0);
 define('IS_MAC', strstr(PHP_OS, 'Darwin') ? 1 : 0);
-define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
-define('IS_AJAX', (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') ? true : false);
 define('NOW_TIME', $_SERVER['REQUEST_TIME']);
-define('REQUEST_METHOD', IS_CLI ? 'GET' : $_SERVER['REQUEST_METHOD']);
-define('IS_GET', REQUEST_METHOD == 'GET' ? true : false);
-define('IS_POST', REQUEST_METHOD == 'POST' ? true : false);
-define('IS_PUT', REQUEST_METHOD == 'PUT' ? true : false);
-define('IS_DELETE', REQUEST_METHOD == 'DELETE' ? true : false);

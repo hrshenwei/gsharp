@@ -26,6 +26,16 @@ class MgrControllerList extends AuthorizedController{
 		}
 		$this->assign('metaStatusJson', json_encode($metaStatusArr));
 		
+		$where['topControllerId'] = 0;
+		$topControllerList = MgrController::where($where)->field('controllerId,controllerName')->select();
+		$this->assign('topControllerList', $topControllerList);
+		
+		$topControllerListArr = [];
+		foreach ($topControllerList as $topController){
+			$topControllerListArr[$topController->controllerId] = $topController->controllerName;
+		}
+		$this->assign('topControllerJson', json_encode($topControllerListArr));
+		
 		return $this->fetch();
 	}
 	
@@ -36,21 +46,25 @@ class MgrControllerList extends AuthorizedController{
 		$dTablesParam = new JQueryDataTableParamModel($_GET);
 			
 		$controllerName = $_REQUEST["sSearch_0"];
-		$metaStatus = $_REQUEST["sSearch_1"];
+		$topControllerId = $_REQUEST["sSearch_1"];
+		$metaStatus = $_REQUEST["sSearch_2"];
 			
 		$where = '';
 		if(!empty($controllerName)){
 			$where['controllerName'] = ['like', "%$controllerName%"];
 		}
+		if($topControllerId != ''){
+			$where['topControllerId'] = $topControllerId;
+		}
 		if(!empty($metaStatus)){
 			$where['metaStatus'] = $metaStatus;
 		}
 	
-		$menuList = MgrController::where($where)->limit($dTablesParam->iDisplayStart, $dTablesParam->iDisplayLength)->order('lastTime', 'desc')->select();
+		$menuList = MgrController::where($where)->limit($dTablesParam->iDisplayStart, $dTablesParam->iDisplayLength)->order('serialNumber', 'desc')->select();
 		$dbCount = MgrController::where($where)->count();
 		$jsonResult = $dTablesParam->getDatatablesJsonData(intval( $dbCount ),intval( $dbCount ), $menuList);
 	
-		return json_encode($jsonResult);
+		return $jsonResult;
 	}
 	
 	/**
@@ -79,7 +93,7 @@ class MgrControllerList extends AuthorizedController{
 			} catch (Exception $e) {
 				$result['message'] = $e;
 			}
-			return json_encode($result);
+			return $result;
 		}
 		else{
 			$this->view->engine->layout(false);
@@ -117,13 +131,13 @@ class MgrControllerList extends AuthorizedController{
 			} catch (Exception $e) {
 				$result['message'] = $e;
 			}
-			return json_encode($result);
+			return $result;
 		}
 		else{
 			$controllerId = input('get.controllerId');
 			if(isset($controllerId)){
 				$data = MgrController::find($controllerId);
-				return json_encode($data);
+				return $data;
 			}
 		}
 	}
@@ -152,7 +166,7 @@ class MgrControllerList extends AuthorizedController{
 			$mgrMenu->save([$columnName => $value],['controllerId' => $controllerId]);
 			$reVal = $value;
 		}
-		return $reVal;
+		echo $reVal;
 	}
 	
 	public function editSelectMgrController(){
@@ -166,7 +180,7 @@ class MgrControllerList extends AuthorizedController{
 				'2' => '停用',
 				'selected' => $value
 		];
-		return json_encode($metaStatusList);
+		return $metaStatusList;
 	}
 	
 	/**
@@ -197,6 +211,6 @@ class MgrControllerList extends AuthorizedController{
 			$result['bSuccess'] = true;
 			$result['message'] = '删除成功';
 		}
-		return json_encode($result);
+		return $result;
 	}
 }
